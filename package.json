@@ -1,6 +1,14 @@
 {
   "name": "md-export",
-  "version": "0.1.0",
+  "description": "Markdown to PDF converter",
+  "main": "dist/index.js",
+  "type": "module",
+  "keywords": [
+    "markdown",
+    "pdf",
+    "converter"
+  ],
+  "author": "dKally",
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
