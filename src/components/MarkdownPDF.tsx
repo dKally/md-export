@@ -1,6 +1,14 @@
-import { Page, Text, View, Document, StyleSheet } from '@react-pdf/renderer';
+import {
+  Page,
+  Text,
+  View,
+  Document,
+  StyleSheet,
+  Link,
+} from '@react-pdf/renderer';
 import React, { ReactElement } from 'react';
 
+// Define styles for both PDF and HTML rendering
 const styles = StyleSheet.create({
   page: {
     padding: 40,
@@ -27,7 +35,7 @@ const styles = StyleSheet.create({
     lineHeight: 1.5,
   },
   strong: {
-    fontWeight: 'bold',
+    fontWeight: '900', // Using '900' for better bold visibility in PDF
   },
   em: {
     fontStyle: 'italic',
@@ -75,7 +83,10 @@ interface MarkdownPDFProps {
   asHtml?: boolean;
 }
 
-const getHtmlClass = (elementType: string) => {
+/**
+ * Maps Markdown element types to their corresponding HTML classes
+ */
+const getHtmlClass = (elementType: string): string => {
   const classMap: Record<string, string> = {
     h1: 'text-2xl font-bold my-4',
     h2: 'text-xl font-bold my-3',
@@ -94,159 +105,179 @@ const getHtmlClass = (elementType: string) => {
   return classMap[elementType] || '';
 };
 
+/**
+ * Component that renders Markdown content either as HTML or PDF
+ */
 export const MarkdownRenderer = ({
   markdown,
   asHtml = false,
 }: MarkdownPDFProps) => {
+  /**
+   * Renders text with Markdown formatting (bold, italic, links, etc.)
+   */
   const renderTextWithFormatting = (text: string): ReactElement => {
     const elements: ReactElement[] = [];
     let remainingText = text;
 
-    const processFormatting = (
-      regex: RegExp,
-      style: any,
-      type: 'bold' | 'italic' | 'code' | 'link' | 'italic_alt' | 'bold_italic'
-    ): boolean => {
-      const match = regex.exec(remainingText);
-      if (!match) return false;
-
-      if (match.index > 0) {
-        elements.push(
+    // Define all supported markdown patterns and their renderers
+    const regexes: Array<{
+      regex: RegExp;
+      render: (
+        content: string,
+        key: string,
+        match: RegExpExecArray
+      ) => ReactElement;
+    }> = [
+      {
+        regex: /\*\*\*(.+?)\*\*\*/, // ***bold italic***
+        render: (content, key) =>
           asHtml ? (
-            <span key={`text-${elements.length}`}>
-              {remainingText.substring(0, match.index)}
+            <span key={key} className="font-bold italic">
+              {content}
             </span>
           ) : (
-            <Text key={`text-${elements.length}`}>
-              {remainingText.substring(0, match.index)}
+            <Text key={key} style={[styles.strong, styles.em]}>
+              {content}
             </Text>
-          )
-        );
-      }
-
-      if (type === 'link') {
-        const [_, linkText, url] = match;
-        elements.push(
+          ),
+      },
+      {
+        regex: /\*\*_(.+?)_\*\*/, // **_bold italic_**
+        render: (content, key) =>
+          asHtml ? (
+            <span key={key} className="font-bold italic">
+              {content}
+            </span>
+          ) : (
+            <Text key={key} style={[styles.strong, styles.em]}>
+              {content}
+            </Text>
+          ),
+      },
+      {
+        regex: /\*\*(.+?)\*\*/, // **bold**
+        render: (content, key) =>
+          asHtml ? (
+            <span key={key} className="font-bold">
+              {content}
+            </span>
+          ) : (
+            <Text key={key} style={styles.strong}>
+              {content}
+            </Text>
+          ),
+      },
+      {
+        regex: /_(.+?)_/, // _italic_
+        render: (content, key) =>
+          asHtml ? (
+            <span key={key} className="italic">
+              {content}
+            </span>
+          ) : (
+            <Text key={key} style={styles.em}>
+              {content}
+            </Text>
+          ),
+      },
+      {
+        regex: /\*(.+?)\*/, // *italic*
+        render: (content, key) =>
+          asHtml ? (
+            <span key={key} className="italic">
+              {content}
+            </span>
+          ) : (
+            <Text key={key} style={styles.em}>
+              {content}
+            </Text>
+          ),
+      },
+      {
+        regex: /`(.+?)`/, // `code`
+        render: (content, key) =>
+          asHtml ? (
+            <code key={key} className="bg-gray-100 p-1 rounded font-mono">
+              {content}
+            </code>
+          ) : (
+            <Text key={key} style={styles.code}>
+              {content}
+            </Text>
+          ),
+      },
+      {
+        regex: /\[(.+?)\]\((.+?)\)/, // [link](url)
+        render: (content, key, match) =>
           asHtml ? (
             <a
-              key={`link-${elements.length}`}
-              href={url}
+              key={key}
+              href={match[2]}
               className={getHtmlClass('a')}
               target="_blank"
               rel="noopener noreferrer"
             >
-              {linkText}
+              {match[1]}
             </a>
           ) : (
-            <Text key={`link-${elements.length}`} style={styles.link}>
-              {linkText}
-            </Text>
-          )
-        );
-      } else if (type === 'bold_italic') {
-        const content = match[1];
-        elements.push(
-          asHtml ? (
-            <span
-              key={`bolditalic-${elements.length}`}
-              className="font-bold italic"
-            >
-              {content}
-            </span>
-          ) : (
-            <Text
-              key={`bolditalic-${elements.length}`}
-              style={{ ...styles.strong, ...styles.em }}
-            >
-              {content}
-            </Text>
-          )
-        );
-      } else {
-        const content = type === 'italic_alt' ? match[2] : match[1];
-        elements.push(
-          asHtml ? (
-            <span
-              key={`${type}-${elements.length}`}
-              className={getHtmlClass(type === 'italic_alt' ? 'em' : type)}
-            >
-              {content}
-            </span>
-          ) : (
-            <Text key={`${type}-${elements.length}`} style={style}>
-              {content}
-            </Text>
-          )
-        );
-      }
+            <Link key={key} src={match[2]} style={styles.link}>
+              {match[1]}
+            </Link>
+          ),
+      },
+    ];
 
-      remainingText = remainingText.substring(match.index + match[0].length);
-      return true;
-    };
-
+    // Process the text to find and replace all markdown patterns
     while (remainingText.length > 0) {
-      // Processa combinação de negrito e itálico
-      if (processFormatting(/\*\*\*(.*?)\*\*\*/g, {}, 'bold_italic')) continue;
+      let matched = false;
 
-      // Processa negrito
-      if (processFormatting(/\*\*(.*?)\*\*/g, styles.strong, 'bold')) continue;
-
-      // Processa itálico com *
-      if (processFormatting(/\*(.*?)\*/g, styles.em, 'italic')) continue;
-
-      // Processa itálico com _
-      if (processFormatting(/_(.*?)_/g, styles.em, 'italic_alt')) continue;
-
-      // Processa links
-      if (processFormatting(/\[(.*?)\]\((.*?)\)/g, styles.link, 'link'))
-        continue;
-
-      // Processa código
-      if (processFormatting(/`(.*?)`/g, styles.code, 'code')) continue;
-
-      // Processa URLs soltos (apenas no modo HTML)
-      if (asHtml && /https?:\/\//.test(remainingText)) {
-        const urlMatch = /(https?:\/\/[^\s]+)/.exec(remainingText);
-        if (urlMatch) {
-          if (urlMatch.index > 0) {
+      // Try each regex pattern in order
+      for (const { regex, render } of regexes) {
+        const match = regex.exec(remainingText);
+        if (match) {
+          // Add text before the match
+          if (match.index > 0) {
+            const before = remainingText.substring(0, match.index);
             elements.push(
-              <span key={`text-${elements.length}`}>
-                {remainingText.substring(0, urlMatch.index)}
-              </span>
+              asHtml ? (
+                <span key={`text-${elements.length}`}>{before}</span>
+              ) : (
+                <Text key={`text-${elements.length}`}>{before}</Text>
+              )
             );
           }
-          elements.push(
-            <a
-              key={`url-${elements.length}`}
-              href={urlMatch[0]}
-              className={getHtmlClass('url')}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              {urlMatch[0]}
-            </a>
-          );
+
+          // Add the formatted content
+          elements.push(render(match[1], `match-${elements.length}`, match));
+
+          // Remove processed text
           remainingText = remainingText.substring(
-            urlMatch.index + urlMatch[0].length
+            match.index + match[0].length
           );
-          continue;
+          matched = true;
+          break;
         }
       }
 
-      // Texto restante sem formatação
-      elements.push(
-        asHtml ? (
-          <span key={`text-${elements.length}`}>{remainingText}</span>
-        ) : (
-          <Text key={`text-${elements.length}`}>{remainingText}</Text>
-        )
-      );
-      remainingText = '';
+      // If no patterns matched, add remaining text as plain text
+      if (!matched) {
+        elements.push(
+          asHtml ? (
+            <span key={`text-${elements.length}`}>{remainingText}</span>
+          ) : (
+            <Text key={`text-${elements.length}`}>{remainingText}</Text>
+          )
+        );
+        break;
+      }
     }
 
     return asHtml ? <>{elements}</> : <Text>{elements}</Text>;
   };
 
+  /**
+   * Parses the markdown content into React elements
+   */
   const parseMarkdown = (): ReactElement[] => {
     const lines = markdown.split('\n');
     const elements: ReactElement[] = [];
@@ -256,6 +287,7 @@ export const MarkdownRenderer = ({
     let orderedListItems: ReactElement[] = [];
     let listCounter = 1;
 
+    // Helper function to flush unordered list items
     const flushList = () => {
       if (listItems.length > 0) {
         elements.push(
@@ -272,6 +304,7 @@ export const MarkdownRenderer = ({
       inList = false;
     };
 
+    // Helper function to flush ordered list items
     const flushOrderedList = () => {
       if (orderedListItems.length > 0) {
         elements.push(
@@ -289,6 +322,7 @@ export const MarkdownRenderer = ({
       inOrderedList = false;
     };
 
+    // Process each line of markdown
     lines.forEach((line, i) => {
       if (line.trim() === '') {
         flushList();
@@ -296,7 +330,7 @@ export const MarkdownRenderer = ({
         return;
       }
 
-      // Títulos
+      // Handle headings
       if (line.startsWith('# ')) {
         flushList();
         flushOrderedList();
@@ -344,7 +378,7 @@ export const MarkdownRenderer = ({
         return;
       }
 
-      // Listas não ordenadas
+      // Handle unordered lists
       if (line.match(/^[-*]\s/)) {
         flushOrderedList();
         if (!inList) inList = true;
@@ -362,7 +396,7 @@ export const MarkdownRenderer = ({
         return;
       }
 
-      // Listas ordenadas
+      // Handle ordered lists
       if (line.match(/^\d+\.\s/)) {
         flushList();
         if (!inOrderedList) inOrderedList = true;
@@ -383,7 +417,7 @@ export const MarkdownRenderer = ({
         return;
       }
 
-      // Linha horizontal
+      // Handle horizontal rules
       if (line.trim() === '---' || line.trim() === '***') {
         flushList();
         flushOrderedList();
@@ -397,7 +431,7 @@ export const MarkdownRenderer = ({
         return;
       }
 
-      // Blocos de citação
+      // Handle blockquotes
       if (line.startsWith('> ')) {
         flushList();
         flushOrderedList();
@@ -418,11 +452,11 @@ export const MarkdownRenderer = ({
         return;
       }
 
-      // Se chegou aqui e tem itens na lista, flush primeiro
+      // If we get here and have list items, flush them first
       flushList();
       flushOrderedList();
 
-      // Parágrafo normal
+      // Handle regular paragraphs
       elements.push(
         asHtml ? (
           <p key={`p-${i}`} className={getHtmlClass('p')}>
@@ -436,16 +470,19 @@ export const MarkdownRenderer = ({
       );
     });
 
+    // Flush any remaining list items
     flushList();
     flushOrderedList();
 
     return elements;
   };
 
+  // Return HTML rendering
   if (asHtml) {
     return <div className="prose max-w-none p-4">{parseMarkdown()}</div>;
   }
 
+  // Return PDF rendering
   return (
     <Document>
       <Page style={styles.page}>
@@ -455,6 +492,7 @@ export const MarkdownRenderer = ({
   );
 };
 
+// Default export for PDF rendering
 const MarkdownPDF = ({ markdown }: { markdown: string }) => (
   <MarkdownRenderer markdown={markdown} />
 );
