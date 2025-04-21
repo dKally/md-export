@@ -14,9 +14,7 @@ declare module 'marked' {
 }
 
 export default function Home() {
-  const [markdown, setMarkdown] = useState(
-    '# Hello World\n\n**Bold text** and *italic*'
-  );
+  const [markdown, setMarkdown] = useState('');
   const [isConverting, setIsConverting] = useState(false);
 
   useEffect(() => {
@@ -29,8 +27,14 @@ export default function Home() {
     });
 
     const saved = localStorage.getItem('markdown-draft');
-    if (saved) setMarkdown(saved);
+    setMarkdown(saved || '# Hello World\n\n**Bold text** and *italic*');
   }, []);
+
+  useEffect(() => {
+    if (markdown) {
+      localStorage.setItem('markdown-draft', markdown);
+    }
+  }, [markdown]);
 
   const exportToPDF = async () => {
     setIsConverting(true);
