@@ -1,11 +1,10 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { marked } from 'marked';
-import DOMPurify from 'dompurify';
 import hljs from 'highlight.js';
 import 'highlight.js/styles/github.css';
 import { pdf } from '@react-pdf/renderer';
-import MarkdownPDF from '@/src/components/MarkdownPDF';
+import MarkdownPDF, { MarkdownRenderer } from '@/src/components/MarkdownPDF';
 
 declare module 'marked' {
   interface MarkedOptions {
@@ -18,7 +17,6 @@ export default function Home() {
   const [markdown, setMarkdown] = useState(
     '# Hello World\n\n**Bold text** and *italic*'
   );
-  const [html, setHtml] = useState('');
   const [isConverting, setIsConverting] = useState(false);
 
   useEffect(() => {
@@ -33,20 +31,6 @@ export default function Home() {
     const saved = localStorage.getItem('markdown-draft');
     if (saved) setMarkdown(saved);
   }, []);
-
-  useEffect(() => {
-    const parseMarkdown = async () => {
-      try {
-        const parsed = await marked.parse(markdown);
-        setHtml(DOMPurify.sanitize(parsed as string));
-      } catch (error) {
-        console.error('Error parsing markdown:', error);
-        setHtml('<p>Error rendering markdown</p>');
-      }
-    };
-    parseMarkdown();
-    localStorage.setItem('markdown-draft', markdown);
-  }, [markdown]);
 
   const exportToPDF = async () => {
     setIsConverting(true);
@@ -101,11 +85,9 @@ export default function Home() {
               {isConverting ? 'Gerando...' : 'Exportar PDF'}
             </button>
           </div>
-          <div
-            className="prose p-4 text-black overflow-y-auto max-w-none flex-1"
-            id="preview"
-            dangerouslySetInnerHTML={{ __html: html }}
-          />
+          <div className="overflow-y-auto flex-1 text-black">
+            <MarkdownRenderer markdown={markdown} asHtml />
+          </div>
         </div>
       </div>
     </div>
