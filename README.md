@@ -1,11 +1,12 @@
 # md-export ✨
 
 Convert Markdown to PDF directly in your browser.
+
 **Free, open-source, and 100% client-side. No servers. No limits.**
 
 🔗 https://md-export.netlify.app/
 
-![App Screenshot](./src/assets/app/img.png)
+![App Screenshot](./src/assets/app-img.png)
 
 ---
 
