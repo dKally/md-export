@@ -15,66 +15,68 @@ const styles = StyleSheet.create({
     fontFamily: 'Helvetica',
   },
   h1: {
-    fontSize: 24,
-    marginBottom: 10,
+    fontSize: 32,
+    marginBottom: 16,
     fontWeight: 'bold',
   },
   h2: {
+    fontSize: 24,
+    marginBottom: 12,
+    fontWeight: 'bold',
+  },
+  h3: {
     fontSize: 20,
     marginBottom: 8,
     fontWeight: 'bold',
   },
-  h3: {
-    fontSize: 16,
-    marginBottom: 6,
-    fontWeight: 'bold',
-  },
   p: {
-    fontSize: 12,
-    marginBottom: 8,
+    fontSize: 16,
+    marginBottom: 0,
     lineHeight: 1.5,
   },
   strong: {
-    fontWeight: '900', // Using '900' for better bold visibility in PDF
+    fontWeight: 'bold',
   },
   em: {
     fontStyle: 'italic',
   },
   hr: {
-    borderBottomWidth: 0.5,
-    borderBottomColor: '#888',
-    marginVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e2e8f0',
+    marginVertical: 16,
   },
   code: {
     fontFamily: 'Courier',
     backgroundColor: '#f5f5f5',
-    padding: 2,
+    padding: 4,
+    borderRadius: 4,
   },
   blockquote: {
-    borderLeftWidth: 2,
-    borderLeftColor: '#ccc',
-    paddingLeft: 8,
-    marginLeft: 8,
+    borderLeftWidth: 4,
+    borderLeftColor: '#d1d5db',
+    paddingLeft: 16,
     fontStyle: 'italic',
-    fontSize: 11,
+    color: '#4b5563',
+    fontSize: 14,
   },
   link: {
-    color: 'blue',
+    color: '#2563eb',
     textDecoration: 'underline',
   },
   listItem: {
-    marginLeft: 12,
+    marginLeft: 20,
     marginBottom: 4,
-    fontSize: 12,
+    fontSize: 16,
   },
   orderedListItem: {
-    marginLeft: 12,
+    marginLeft: 20,
     marginBottom: 4,
-    fontSize: 12,
+    fontSize: 16,
   },
   url: {
-    color: 'blue',
+    color: '#2563eb',
     textDecoration: 'underline',
+    wordBreak: 'break-all',
   },
 });
 
@@ -88,17 +90,17 @@ interface MarkdownPDFProps {
  */
 const getHtmlClass = (elementType: string): string => {
   const classMap: Record<string, string> = {
-    h1: 'text-2xl font-bold my-4',
-    h2: 'text-xl font-bold my-3',
-    h3: 'text-lg font-bold my-2',
-    p: 'text-base my-2',
+    h1: 'text-4xl font-bold my-4',
+    h2: 'text-2xl font-bold my-3',
+    h3: 'text-xl font-bold my-2',
+    p: 'text-base whitespace-pre-wrap',
     strong: 'font-bold',
     em: 'italic',
     code: 'font-mono bg-gray-100 p-1 rounded',
     blockquote: 'border-l-4 border-gray-300 pl-4 italic text-gray-600',
     hr: 'my-4 border-t border-gray-300',
-    li: 'list-disc ml-5',
-    ol: 'list-decimal ml-5',
+    li: 'list-disc ml-5 whitespace-pre-wrap',
+    ol: 'list-decimal ml-5 whitespace-pre-wrap',
     a: 'text-blue-600 underline',
     url: 'text-blue-600 underline break-all',
   };
@@ -286,8 +288,8 @@ export const MarkdownRenderer = ({
     let listItems: ReactElement[] = [];
     let orderedListItems: ReactElement[] = [];
     let listCounter = 1;
+    let emptyLineCount = 0;
 
-    // Helper function to flush unordered list items
     const flushList = () => {
       if (listItems.length > 0) {
         elements.push(
@@ -304,7 +306,6 @@ export const MarkdownRenderer = ({
       inList = false;
     };
 
-    // Helper function to flush ordered list items
     const flushOrderedList = () => {
       if (orderedListItems.length > 0) {
         elements.push(
@@ -322,15 +323,37 @@ export const MarkdownRenderer = ({
       inOrderedList = false;
     };
 
-    // Process each line of markdown
+    const addEmptyLines = (count: number) => {
+      if (count > 0) {
+        const height = count === 1 ? '0em' : `${(count - 1) * 1.5}em`;
+        const pdfHeight = count === 1 ? 8 : (count - 1) * 20;
+
+        elements.push(
+          asHtml ? (
+            <div key={`empty-${elements.length}`} style={{ height }} />
+          ) : (
+            <View
+              key={`empty-${elements.length}`}
+              style={{ height: pdfHeight }}
+            />
+          )
+        );
+      }
+    };
+
     lines.forEach((line, i) => {
       if (line.trim() === '') {
-        flushList();
-        flushOrderedList();
+        emptyLineCount++;
         return;
       }
 
-      // Handle headings
+      if (emptyLineCount > 0) {
+        flushList();
+        flushOrderedList();
+        addEmptyLines(emptyLineCount);
+        emptyLineCount = 0;
+      }
+
       if (line.startsWith('# ')) {
         flushList();
         flushOrderedList();
