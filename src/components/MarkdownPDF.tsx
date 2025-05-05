@@ -8,29 +8,54 @@ import {
 } from '@react-pdf/renderer';
 import React, { ReactElement } from 'react';
 
-// Define styles for both PDF and HTML rendering
+const propsH1 = {
+  size: 14,
+  margin: 16,
+};
+
+const propsH2 = {
+  size: 12,
+  margin: 12,
+};
+
+const propsH3 = {
+  size: 10,
+  margin: 8,
+};
+
+const propsP = {
+  size: 8,
+  margin: 0,
+};
+
+const sizeCode = 7;
+const sizeBlockquote = 7;
+const sizeListItem = 8;
+
+const multiplySizeOnPreview = 1.5;
+
 const styles = StyleSheet.create({
   page: {
     padding: 40,
     fontFamily: 'Helvetica',
   },
   h1: {
-    fontSize: 32,
-    marginBottom: 16,
+    fontSize: propsH1.size,
+    marginBottom: 0,
     fontWeight: 'bold',
   },
   h2: {
-    fontSize: 24,
-    marginBottom: 12,
+    fontSize: propsH2.size,
+    marginBottom: 0,
     fontWeight: 'bold',
   },
   h3: {
-    fontSize: 20,
-    marginBottom: 8,
+    fontSize: propsH3.size,
+    marginBottom: 0,
     fontWeight: 'bold',
   },
   p: {
-    fontSize: 16,
+    fontSize: propsP.size,
     marginBottom: 0,
     lineHeight: 1.5,
   },
@@ -43,13 +68,14 @@ const styles = StyleSheet.create({
   hr: {
     borderBottomWidth: 1,
     borderBottomColor: '#e2e8f0',
-    marginVertical: 16,
+    marginVertical: 3,
   },
   code: {
     fontFamily: 'Courier',
     backgroundColor: '#f5f5f5',
     padding: 4,
     borderRadius: 4,
+    fontSize: sizeCode,
   },
   blockquote: {
     borderLeftWidth: 4,
@@ -57,7 +83,7 @@ const styles = StyleSheet.create({
     paddingLeft: 16,
     fontStyle: 'italic',
     color: '#4b5563',
-    fontSize: 14,
+    fontSize: sizeBlockquote,
   },
   link: {
     color: '#2563eb',
@@ -66,12 +92,12 @@ const styles = StyleSheet.create({
   listItem: {
     marginLeft: 20,
     marginBottom: 4,
-    fontSize: 16,
+    fontSize: sizeListItem,
   },
   orderedListItem: {
     marginLeft: 20,
     marginBottom: 4,
-    fontSize: 16,
+    fontSize: sizeListItem,
   },
   url: {
     color: '#2563eb',
@@ -80,48 +106,92 @@ const styles = StyleSheet.create({
   },
 });
 
+// Estilos para HTML
+const htmlStyles = {
+  h1: {
+    fontSize: `${propsH1.size * multiplySizeOnPreview}px`,
+    fontWeight: 'bold',
+    marginBottom: `${propsH1.margin}px`,
+    marginTop: `${propsH1.margin}px`,
+  },
+  h2: {
+    fontSize: `${propsH2.size * multiplySizeOnPreview}px`,
+    fontWeight: 'bold',
+    marginBottom: `${propsH2.margin}px`,
+    marginTop: `${propsH2.margin}px`,
+  },
+  h3: {
+    fontSize: `${propsH3.size * multiplySizeOnPreview}px`,
+    fontWeight: 'bold',
+    marginBottom: `${propsH3.margin}px`,
+    marginTop: `${propsH3.margin}px`,
+  },
+  p: {
+    fontSize: `${propsP.size * multiplySizeOnPreview}px`,
+    marginBottom: `${propsP.margin}px`,
+    lineHeight: 1.5,
+    whiteSpace: 'pre-wrap',
+  },
+  strong: {
+    fontWeight: 'bold',
+  },
+  em: {
+    fontStyle: 'italic',
+  },
+  code: {
+    fontFamily: 'Courier, monospace',
+    backgroundColor: '#f5f5f5',
+    padding: '4px',
+    borderRadius: '4px',
+    fontSize: `${sizeCode * multiplySizeOnPreview}px`,
+  },
+  blockquote: {
+    borderLeft: '4px solid #d1d5db',
+    paddingLeft: '16px',
+    fontStyle: 'italic',
+    color: '#4b5563',
+    fontSize: `${sizeBlockquote * multiplySizeOnPreview}px`,
+  },
+  hr: {
+    margin: '16px 0',
+    borderTop: '1px solid #e2e8f0',
+  },
+  li: {
+    marginLeft: '20px',
+    marginBottom: '4px',
+    fontSize: `${sizeListItem * multiplySizeOnPreview}px`,
+    listStyleType: 'disc',
+  },
+  ol: {
+    marginLeft: '20px',
+    marginBottom: '4px',
+    fontSize: `${sizeListItem * multiplySizeOnPreview}px`,
+    listStyleType: 'decimal',
+  },
+  a: {
+    color: '#2563eb',
+    textDecoration: 'underline',
+  },
+  url: {
+    color: '#2563eb',
+    textDecoration: 'underline',
+    wordBreak: 'break-all',
+  },
+};
+
 interface MarkdownPDFProps {
   markdown: string;
   asHtml?: boolean;
 }
 
-/**
- * Maps Markdown element types to their corresponding HTML classes
- */
-const getHtmlClass = (elementType: string): string => {
-  const classMap: Record<string, string> = {
-    h1: 'text-4xl font-bold my-4',
-    h2: 'text-2xl font-bold my-3',
-    h3: 'text-xl font-bold my-2',
-    p: 'text-base whitespace-pre-wrap',
-    strong: 'font-bold',
-    em: 'italic',
-    code: 'font-mono bg-gray-100 p-1 rounded',
-    blockquote: 'border-l-4 border-gray-300 pl-4 italic text-gray-600',
-    hr: 'my-4 border-t border-gray-300',
-    li: 'list-disc ml-5 whitespace-pre-wrap',
-    ol: 'list-decimal ml-5 whitespace-pre-wrap',
-    a: 'text-blue-600 underline',
-    url: 'text-blue-600 underline break-all',
-  };
-  return classMap[elementType] || '';
-};
-
-/**
- * Component that renders Markdown content either as HTML or PDF
- */
 export const MarkdownRenderer = ({
   markdown,
   asHtml = false,
 }: MarkdownPDFProps) => {
-  /**
-   * Renders text with Markdown formatting (bold, italic, links, etc.)
-   */
   const renderTextWithFormatting = (text: string): ReactElement => {
     const elements: ReactElement[] = [];
     let remainingText = text;
 
-    // Define all supported markdown patterns and their renderers
     const regexes: Array<{
       regex: RegExp;
       render: (
@@ -131,10 +201,10 @@ export const MarkdownRenderer = ({
       ) => ReactElement;
     }> = [
       {
-        regex: /\*\*\*(.+?)\*\*\*/, // ***bold italic***
+        regex: /\*\*\*(.+?)\*\*\*/,
         render: (content, key) =>
           asHtml ? (
-            <span key={key} className="font-bold italic">
+            <span key={key} style={{ ...htmlStyles.strong, ...htmlStyles.em }}>
               {content}
             </span>
           ) : (
@@ -144,10 +214,10 @@ export const MarkdownRenderer = ({
           ),
       },
       {
-        regex: /\*\*_(.+?)_\*\*/, // **_bold italic_**
+        regex: /\*\*_(.+?)_\*\*/,
         render: (content, key) =>
           asHtml ? (
-            <span key={key} className="font-bold italic">
+            <span key={key} style={{ ...htmlStyles.strong, ...htmlStyles.em }}>
               {content}
             </span>
           ) : (
@@ -157,10 +227,10 @@ export const MarkdownRenderer = ({
           ),
       },
       {
-        regex: /\*\*(.+?)\*\*/, // **bold**
+        regex: /\*\*(.+?)\*\*/,
         render: (content, key) =>
           asHtml ? (
-            <span key={key} className="font-bold">
+            <span key={key} style={htmlStyles.strong}>
               {content}
             </span>
           ) : (
@@ -170,10 +240,10 @@ export const MarkdownRenderer = ({
           ),
       },
       {
-        regex: /_(.+?)_/, // _italic_
+        regex: /_(.+?)_/,
         render: (content, key) =>
           asHtml ? (
-            <span key={key} className="italic">
+            <span key={key} style={htmlStyles.em}>
               {content}
             </span>
           ) : (
@@ -183,10 +253,10 @@ export const MarkdownRenderer = ({
           ),
       },
       {
-        regex: /\*(.+?)\*/, // *italic*
+        regex: /\*(.+?)\*/,
         render: (content, key) =>
           asHtml ? (
-            <span key={key} className="italic">
+            <span key={key} style={htmlStyles.em}>
               {content}
             </span>
           ) : (
@@ -196,10 +266,10 @@ export const MarkdownRenderer = ({
           ),
       },
       {
-        regex: /`(.+?)`/, // `code`
+        regex: /`(.+?)`/,
         render: (content, key) =>
           asHtml ? (
-            <code key={key} className="bg-gray-100 p-1 rounded font-mono">
+            <code key={key} style={htmlStyles.code}>
               {content}
             </code>
           ) : (
@@ -209,13 +279,13 @@ export const MarkdownRenderer = ({
           ),
       },
       {
-        regex: /\[(.+?)\]\((.+?)\)/, // [link](url)
+        regex: /\[(.+?)\]\((.+?)\)/,
         render: (content, key, match) =>
           asHtml ? (
             <a
               key={key}
               href={match[2]}
-              className={getHtmlClass('a')}
+              style={htmlStyles.a}
               target="_blank"
               rel="noopener noreferrer"
             >
@@ -229,15 +299,12 @@ export const MarkdownRenderer = ({
       },
     ];
 
-    // Process the text to find and replace all markdown patterns
     while (remainingText.length > 0) {
       let matched = false;
 
-      // Try each regex pattern in order
       for (const { regex, render } of regexes) {
         const match = regex.exec(remainingText);
         if (match) {
-          // Add text before the match
           if (match.index > 0) {
             const before = remainingText.substring(0, match.index);
             elements.push(
@@ -249,10 +316,7 @@ export const MarkdownRenderer = ({
             );
           }
 
-          // Add the formatted content
           elements.push(render(match[1], `match-${elements.length}`, match));
-
-          // Remove processed text
           remainingText = remainingText.substring(
             match.index + match[0].length
           );
@@ -261,7 +325,6 @@ export const MarkdownRenderer = ({
         }
       }
 
-      // If no patterns matched, add remaining text as plain text
       if (!matched) {
         elements.push(
           asHtml ? (
@@ -277,9 +340,6 @@ export const MarkdownRenderer = ({
     return asHtml ? <>{elements}</> : <Text>{elements}</Text>;
   };
 
-  /**
-   * Parses the markdown content into React elements
-   */
   const parseMarkdown = (): ReactElement[] => {
     const lines = markdown.split('\n');
     const elements: ReactElement[] = [];
@@ -294,7 +354,7 @@ export const MarkdownRenderer = ({
       if (listItems.length > 0) {
         elements.push(
           asHtml ? (
-            <ul key={`ul-${elements.length}`} className={getHtmlClass('li')}>
+            <ul key={`ul-${elements.length}`} style={{ padding: 0, margin: 0 }}>
               {listItems}
             </ul>
           ) : (
@@ -310,7 +370,7 @@ export const MarkdownRenderer = ({
       if (orderedListItems.length > 0) {
         elements.push(
           asHtml ? (
-            <ol key={`ol-${elements.length}`} className={getHtmlClass('ol')}>
+            <ol key={`ol-${elements.length}`} style={{ padding: 0, margin: 0 }}>
               {orderedListItems}
             </ol>
           ) : (
@@ -359,7 +419,7 @@ export const MarkdownRenderer = ({
         flushOrderedList();
         elements.push(
           asHtml ? (
-            <h1 key={`h1-${i}`} className={getHtmlClass('h1')}>
+            <h1 key={`h1-${i}`} style={htmlStyles.h1}>
               {renderTextWithFormatting(line.substring(2))}
             </h1>
           ) : (
@@ -374,7 +434,7 @@ export const MarkdownRenderer = ({
         flushOrderedList();
         elements.push(
           asHtml ? (
-            <h2 key={`h2-${i}`} className={getHtmlClass('h2')}>
+            <h2 key={`h2-${i}`} style={htmlStyles.h2}>
               {renderTextWithFormatting(line.substring(3))}
             </h2>
           ) : (
@@ -389,7 +449,7 @@ export const MarkdownRenderer = ({
         flushOrderedList();
         elements.push(
           asHtml ? (
-            <h3 key={`h3-${i}`} className={getHtmlClass('h3')}>
+            <h3 key={`h3-${i}`} style={htmlStyles.h3}>
               {renderTextWithFormatting(line.substring(4))}
             </h3>
           ) : (
@@ -401,13 +461,12 @@ export const MarkdownRenderer = ({
         return;
       }
 
-      // Handle unordered lists
       if (line.match(/^[-*]\s/)) {
         flushOrderedList();
         if (!inList) inList = true;
         listItems.push(
           asHtml ? (
-            <li key={`li-${i}`} className={getHtmlClass('li')}>
+            <li key={`li-${i}`} style={htmlStyles.li}>
               {renderTextWithFormatting(line.substring(2))}
             </li>
           ) : (
@@ -419,13 +478,12 @@ export const MarkdownRenderer = ({
         return;
       }
 
-      // Handle ordered lists
       if (line.match(/^\d+\.\s/)) {
         flushList();
         if (!inOrderedList) inOrderedList = true;
         orderedListItems.push(
           asHtml ? (
-            <li key={`oli-${i}`} className={getHtmlClass('li')}>
+            <li key={`oli-${i}`} style={htmlStyles.ol}>
               {renderTextWithFormatting(line.replace(/^\d+\.\s/, ''))}
             </li>
           ) : (
@@ -440,13 +498,12 @@ export const MarkdownRenderer = ({
         return;
       }
 
-      // Handle horizontal rules
       if (line.trim() === '---' || line.trim() === '***') {
         flushList();
         flushOrderedList();
         elements.push(
           asHtml ? (
-            <hr key={`hr-${i}`} className={getHtmlClass('hr')} />
+            <hr key={`hr-${i}`} style={htmlStyles.hr} />
           ) : (
             <View key={`hr-${i}`} style={styles.hr} />
           )
@@ -454,16 +511,12 @@ export const MarkdownRenderer = ({
         return;
       }
 
-      // Handle blockquotes
       if (line.startsWith('> ')) {
         flushList();
         flushOrderedList();
         elements.push(
           asHtml ? (
-            <blockquote
-              key={`blockquote-${i}`}
-              className={getHtmlClass('blockquote')}
-            >
+            <blockquote key={`blockquote-${i}`} style={htmlStyles.blockquote}>
               {renderTextWithFormatting(line.substring(2))}
             </blockquote>
           ) : (
@@ -475,14 +528,12 @@ export const MarkdownRenderer = ({
         return;
       }
 
-      // If we get here and have list items, flush them first
       flushList();
       flushOrderedList();
 
-      // Handle regular paragraphs
       elements.push(
         asHtml ? (
-          <p key={`p-${i}`} className={getHtmlClass('p')}>
+          <p key={`p-${i}`} style={htmlStyles.p}>
             {renderTextWithFormatting(line)}
           </p>
         ) : (
@@ -493,19 +544,16 @@ export const MarkdownRenderer = ({
       );
     });
 
-    // Flush any remaining list items
     flushList();
     flushOrderedList();
 
     return elements;
   };
 
-  // Return HTML rendering
   if (asHtml) {
-    return <div className="prose max-w-none p-4">{parseMarkdown()}</div>;
+    return <div style={{ padding: '16px' }}>{parseMarkdown()}</div>;
   }
 
-  // Return PDF rendering
   return (
     <Document>
       <Page style={styles.page}>
@@ -515,7 +563,6 @@ export const MarkdownRenderer = ({
   );
 };
 
-// Default export for PDF rendering
 const MarkdownPDF = ({ markdown }: { markdown: string }) => (
   <MarkdownRenderer markdown={markdown} />
 );
